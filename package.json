@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@chainlink/contracts": "^0.6.1",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
@@ -21,5 +22,9 @@
     "ts-node": "^10.9.1",
     "typechain": "^8.1.1",
     "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.0",
+    "@types/mocha": ">=9.1.0"
   }
 }
