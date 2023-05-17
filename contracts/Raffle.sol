@@ -54,7 +54,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     event WinnerPicked(address indexed winner);
 
     constructor(
-        address vrfCoordinatorV2, // contract 
+        address vrfCoordinatorV2, // contract
         uint64 subscriptionId,
         bytes32 gasLane,
         uint256 interval,
@@ -137,11 +137,11 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         return i_entranceFee;
     }
 
-    function viewPlayers(uint256 index) public view returns (address) {
+    function getPlayer(uint256 index) public view returns (address) {
         return s_players[index];
     }
 
-    function viewRecentWinner() public view returns (address) {
+    function getRecentWinner() public view returns (address) {
         return s_recentWinner;
     }
 
@@ -159,6 +159,10 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     function getLatestTimeStamp() public view returns (uint256) {
         return s_lastTimestamp;
+    }
+
+    function getInterval() public view returns (uint256) {
+        return i_interval;
     }
 
     function getRequestConfirmations() public pure returns (uint256) {

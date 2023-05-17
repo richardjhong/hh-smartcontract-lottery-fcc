@@ -28,6 +28,16 @@ const config: HardhatUserConfig = {
             },
         ],
     },
+    etherscan: {
+        apiKey: ETHERSCAN_API_KEY,
+    },
+    gasReporter: {
+        enabled: false,
+        outputFile: "gas-report.txt",
+        noColors: true,
+        currency: "USD",
+        coinmarketcap: COINMARKETCAP_API_KEY,
+    },
     namedAccounts: {
         deployer: {
             default: 0,
