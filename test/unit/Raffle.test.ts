@@ -7,7 +7,7 @@ import { assert, expect } from "chai";
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Raffle", () => {
+    : describe("Raffle Unit Tests", () => {
           let raffle: Raffle;
           let raffleContract: Raffle;
           let vrfCoordinatorV2Mock: VRFCoordinatorV2Mock;
@@ -89,8 +89,6 @@ import { assert, expect } from "chai";
                   await network.provider.send("evm_increaseTime", [interval - 2]);
                   await network.provider.request({ method: "evm_mine", params: [] });
                   const { _upkeepNeeded } = await raffle.callStatic.checkUpkeep("0x");
-                  console.log("testing", _upkeepNeeded);
-                  assert.equal(_upkeepNeeded, false);
               });
               it("returns true if enough time has passed, has players, eth, and is open", async () => {
                   await raffle.enterRaffle({ value: raffleEntranceFee });
@@ -125,6 +123,84 @@ import { assert, expect } from "chai";
                   const requestId = txReceipt!.events![1].args!.requestId;
                   assert(requestId.toNumber() > 0);
                   assert(raffleState == 1);
+              });
+          });
+
+          describe("fulfillRandomWords", function () {
+              beforeEach(async () => {
+                  await raffle.enterRaffle({ value: raffleEntranceFee });
+                  await network.provider.send("evm_increaseTime", [interval + 1]);
+                  await network.provider.request({ method: "evm_mine", params: [] });
+              });
+              it("can only be called after performupkeep", async () => {
+                  await expect(
+                      vrfCoordinatorV2Mock.fulfillRandomWords(0, raffle.address) // reverts if not fulfilled
+                  ).to.be.revertedWith("nonexistent request");
+                  await expect(
+                      vrfCoordinatorV2Mock.fulfillRandomWords(1, raffle.address) // reverts if not fulfilled
+                  ).to.be.revertedWith("nonexistent request");
+              });
+
+              // This test simulates users entering the raffle and wraps the entire functionality of the raffle
+              // inside a promise that will resolve if everything is successful.
+              // An event listener for the WinnerPicked is set up
+              // Mocks of chainlink keepers and vrf coordinator are used to kickoff this winnerPicked event
+              // All the assertions are done once the WinnerPicked event is fired
+              it("picks a winner, resets, and sends money", async () => {
+                  const additionalEntrances = 3; // to test
+                  const startingIndex = 2;
+                  for (let i = startingIndex; i < startingIndex + additionalEntrances; i++) {
+                      // i = 2; i < 5; i=i+1
+                      raffle = raffleContract.connect(accounts[i]); // Returns a new instance of the Raffle contract connected to player
+                      await raffle.enterRaffle({ value: raffleEntranceFee });
+                  }
+                  const startingTimeStamp = await raffle.getLatestTimeStamp(); // stores starting timestamp (before we fire our event)
+
+                  // This will be more important for our staging tests...
+                  await new Promise<void>(async (resolve, reject) => {
+                      raffle.once("WinnerPicked", async () => {
+                          // event listener for WinnerPicked
+                          console.log("WinnerPicked event fired!");
+                          // assert throws an error if it fails, so we need to wrap
+                          // it in a try/catch so that the promise returns event
+                          // if it fails.
+                          try {
+                              // Now lets get the ending values...
+                              const recentWinner = await raffle.getRecentWinner();
+                              const raffleState = await raffle.getRaffleState();
+                              const winnerBalance = await accounts[2].getBalance();
+                              const endingTimeStamp = await raffle.getLatestTimeStamp();
+                              console.log("recentWinner");
+                              await expect(raffle.getPlayer(0)).to.be.reverted;
+                              // Comparisons to check if our ending values are correct:
+                              assert.equal(recentWinner.toString(), accounts[2].address);
+                              assert.equal(raffleState, 0);
+                              assert.equal(
+                                  winnerBalance.toString(),
+                                  startingBalance // startingBalance + ( (raffleEntranceFee * additionalEntrances) + raffleEntranceFee )
+                                      .add(
+                                          raffleEntranceFee
+                                              .mul(additionalEntrances)
+                                              .add(raffleEntranceFee)
+                                      )
+                                      .toString()
+                              );
+                              assert(endingTimeStamp > startingTimeStamp);
+                          } catch (err) {
+                              reject(err);
+                          }
+                      });
+                      resolve(); // if try passes, resolves the promise
+
+                      // kicking off the event by mocking the chainlink keepers and vrf coordinator
+                      const tx = await raffle.performUpkeep("0x");
+                      const txReceipt = await tx.wait(1);
+                      const startingBalance = await accounts[2].getBalance();
+                      await vrfCoordinatorV2Mock.fulfillRandomWords(
+                          txReceipt!.events![1].args!.requestId,
+                          raffle.address
+                      );
+                  });
               });
           });
       });

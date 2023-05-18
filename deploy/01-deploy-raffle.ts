@@ -17,7 +17,7 @@ const Raffle: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const chainId = network.config.chainId;
     let vrfCoordinatorV2Address: string | undefined;
     let subscriptionId: string | undefined;
-    let vrfCoordinatorV2Mock;
+    let vrfCoordinatorV2Mock: any;
 
     if (chainId == 31337) {
         vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock");
@@ -55,7 +55,7 @@ const Raffle: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         log("Verifying...");
         await verify(raffle.address, args);
     } else {
-        await vrfCoordinatorV2Mock.addConsumer(subscriptionId, raffle.address);
+        await vrfCoordinatorV2Mock!.addConsumer(subscriptionId, raffle.address);
     }
     log("----------------------------------------------------");
 };

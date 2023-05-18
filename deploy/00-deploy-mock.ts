@@ -4,7 +4,7 @@ import { developmentChains } from "../helper-hardhat-config";
 import { ethers } from "hardhat";
 
 const BASE_FEE = ethers.utils.parseEther("0.25"); // 0.25 is the premium; it costs 0.25 LINK per request
-const GAS_PRICE_LINK = 1e9; // link per gas, is this the gas lane? // 0.000000001 LINK per gas
+const GAS_PRICE_LINK = 1e9; 
 
 const deployMocks: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const { getNamedAccounts, deployments, network } = hre;
